@@ -15,9 +15,11 @@ from src.database import Base, get_db
 from src.models import FactorialResult
 
 import uuid
+import os
 
-# Create temporary test database name
-TEST_DB_NAME = f"test_db_{uuid.uuid4().hex}"
+# Create temporary test database name with timestamp for easier identification
+from datetime import datetime
+TEST_DB_NAME = f"test_db_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:demopassword@localhost:5433/{TEST_DB_NAME}"
 
 from sqlalchemy import text
@@ -93,6 +95,12 @@ def test_history():
 def teardown_module(module):
     """Cleanup test database after all tests complete"""
     engine.dispose()
+    
+    # Check if any test failed
+    if hasattr(module, 'pytest_failed') and module.pytest_failed:
+        print(f"\nTest failed - preserving database '{TEST_DB_NAME}' for inspection")
+        return
+        
     with temp_engine.connect() as conn:
         # Terminate all connections to the test database
         conn.execute(text(f"""
@@ -103,3 +111,8 @@ def teardown_module(module):
         """))
         conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
     temp_engine.dispose()
+
+def pytest_runtest_makereport(item, call):
+    """Hook to detect test failures"""
+    if call.excinfo is not None:
+        item.module.pytest_failed = True
