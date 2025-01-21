@@ -1,5 +1,7 @@
 venv
 notes/
 .aider*
+.env.aider
 __pycache__
 .env.app
+.env
