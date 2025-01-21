@@ -2,3 +2,4 @@ venv
 notes/
 .aider*
 __pycache__
+.env
