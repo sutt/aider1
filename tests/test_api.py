@@ -87,10 +87,10 @@ def test_history():
     assert len(results) == 2
     
     # Check the results are correct
-    assert results[0]["input_number"] == 0
-    assert results[0]["result"] == 1
-    assert results[1]["input_number"] == 5
-    assert results[1]["result"] == 120
+    assert results[0]["input_number"] == 5
+    assert results[0]["result"] == 120
+    assert results[1]["input_number"] == 0
+    assert results[1]["result"] == 1
 
 def teardown_module(module):
     """Cleanup test database after all tests complete"""
