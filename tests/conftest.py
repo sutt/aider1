@@ -45,4 +45,4 @@ def pytest_sessionstart(session):
                 print("\nNo test databases found to clean up")
         
         # Exit after cleanup
-        session.exit("Cleanup complete")
+        pytest.exit("Cleanup complete")
