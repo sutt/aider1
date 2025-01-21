@@ -92,6 +92,30 @@ def test_history():
     assert results[1]["input_number"] == 0
     assert results[1]["result"] == 1
 
+def test_history_filter():
+    # Clear any existing history
+    db = TestingSessionLocal()
+    db.query(FactorialResult).delete()
+    db.commit()
+    
+    # Create some factorial results
+    client.get("/factorial/0")
+    client.get("/factorial/5")
+    
+    # Test history endpoint with filter
+    response = client.get("/history?input_number=5")
+    assert response.status_code == 200
+    results = response.json()
+    
+    # Check we have 1 result
+    assert len(results) == 1
+    
+    # Check the result is correct
+    assert results[0]["input_number"] == 5
+    assert results[0]["result"] == 120
+    assert results[1]["input_number"] == 0
+    assert results[1]["result"] == 1
+
 def teardown_module(module):
     """Cleanup test database after all tests complete"""
     engine.dispose()
