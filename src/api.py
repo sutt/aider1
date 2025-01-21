@@ -9,8 +9,6 @@ factorial = get_factorial()
 # Create tables
 models.Base.metadata.create_all(bind=database.engine)
 
-raise Exception
-
 @app.get("/factorial/{input_num}")
 async def get_factorial_result(input_num: int, db: Session = Depends(database.get_db)):
     if input_num < 0:
