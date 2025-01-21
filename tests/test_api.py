@@ -14,13 +14,24 @@ from src.api import app
 from src.database import Base, get_db
 from src.models import FactorialResult
 
-# Create in-memory SQLite database for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+import uuid
+import os
+
+# Create temporary test database name with timestamp for easier identification
+from datetime import datetime
+TEST_DB_NAME = f"test_db_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:demopassword@localhost:5433/{TEST_DB_NAME}"
+
+from sqlalchemy import text
+
+# Create test database
+temp_engine = create_engine("postgresql://postgres:demopassword@localhost:5433/postgres", 
+                          isolation_level="AUTOCOMMIT")
+with temp_engine.connect() as conn:
+    conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
+    conn.execute(text(f"CREATE DATABASE {TEST_DB_NAME}"))
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import Base from models to ensure all models are registered
@@ -75,8 +86,29 @@ def test_history():
     # Check we have 2 results
     assert len(results) == 2
     
-    # Check the results are correct
-    assert results[0]["input_number"] == 0
-    assert results[0]["result"] == 1
-    assert results[1]["input_number"] == 5
-    assert results[1]["result"] == 120
+    # Check the results are correct - newest first due to created_at DESC order
+    assert results[0]["input_number"] == 5
+    assert results[0]["result"] == 120
+    assert results[1]["input_number"] == 0
+    assert results[1]["result"] == 1
+
+def teardown_module(module):
+    """Cleanup test database after all tests complete"""
+    engine.dispose()
+    
+    # Check if any test failed
+    if hasattr(module, 'pytest_failed') and module.pytest_failed:
+        print(f"\nTest failed - preserving database '{TEST_DB_NAME}' for inspection")
+        return
+        
+    with temp_engine.connect() as conn:
+        # Terminate all connections to the test database
+        conn.execute(text(f"""
+            SELECT pg_terminate_backend(pg_stat_activity.pid)
+            FROM pg_stat_activity
+            WHERE pg_stat_activity.datname = '{TEST_DB_NAME}'
+            AND pid <> pg_backend_pid()
+        """))
+        conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
+    temp_engine.dispose()
+
