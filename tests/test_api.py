@@ -20,11 +20,13 @@ import uuid
 TEST_DB_NAME = f"test_db_{uuid.uuid4().hex}"
 SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:demopassword@localhost:5433/{TEST_DB_NAME}"
 
+from sqlalchemy import text
+
 # Create test database
 temp_engine = create_engine("postgresql://postgres:demopassword@localhost:5433/postgres")
 with temp_engine.connect() as conn:
-    conn.execute(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}")
-    conn.execute(f"CREATE DATABASE {TEST_DB_NAME}")
+    conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
+    conn.execute(text(f"CREATE DATABASE {TEST_DB_NAME}"))
     conn.commit()
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -93,12 +95,12 @@ def teardown_module(module):
     engine.dispose()
     with temp_engine.connect() as conn:
         # Terminate all connections to the test database
-        conn.execute(f"""
+        conn.execute(text(f"""
             SELECT pg_terminate_backend(pg_stat_activity.pid)
             FROM pg_stat_activity
             WHERE pg_stat_activity.datname = '{TEST_DB_NAME}'
             AND pid <> pg_backend_pid()
-        """)
-        conn.execute(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}")
+        """))
+        conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
         conn.commit()
     temp_engine.dispose()
