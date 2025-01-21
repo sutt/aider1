@@ -99,6 +99,8 @@ def teardown_module(module):
     # Check if any test failed
     if hasattr(module, 'pytest_failed') and module.pytest_failed:
         print(f"\nTest failed - preserving database '{TEST_DB_NAME}' for inspection")
+        print(f"To connect to the database using Docker, use the following command:")
+        print(f"docker exec -it <container_name> psql -U postgres -d {TEST_DB_NAME} -h localhost -p 5433")
         return
         
     with temp_engine.connect() as conn:
