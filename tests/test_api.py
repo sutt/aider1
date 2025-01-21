@@ -23,11 +23,11 @@ SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:demopassword@localhost:5433/{T
 from sqlalchemy import text
 
 # Create test database
-temp_engine = create_engine("postgresql://postgres:demopassword@localhost:5433/postgres")
+temp_engine = create_engine("postgresql://postgres:demopassword@localhost:5433/postgres", 
+                          isolation_level="AUTOCOMMIT")
 with temp_engine.connect() as conn:
     conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
     conn.execute(text(f"CREATE DATABASE {TEST_DB_NAME}"))
-    conn.commit()
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -102,5 +102,4 @@ def teardown_module(module):
             AND pid <> pg_backend_pid()
         """))
         conn.execute(text(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}"))
-        conn.commit()
     temp_engine.dispose()
