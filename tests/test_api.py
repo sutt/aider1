@@ -86,8 +86,8 @@ def test_history():
     # Check we have 2 results
     assert len(results) == 2
     
-    # Check the results are correct
-    assert results[1]["input_number"] == 5
+    # Check the results are correct - newest first due to created_at DESC order
+    assert results[0]["input_number"] == 5
     assert results[0]["result"] == 120
     assert results[1]["input_number"] == 0
     assert results[1]["result"] == 1
