@@ -14,13 +14,20 @@ from src.api import app
 from src.database import Base, get_db
 from src.models import FactorialResult
 
-# Create in-memory SQLite database for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+import uuid
+
+# Create temporary test database name
+TEST_DB_NAME = f"test_db_{uuid.uuid4().hex}"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:demopassword@localhost:5433/{TEST_DB_NAME}"
+
+# Create test database
+temp_engine = create_engine("postgresql://postgres:demopassword@localhost:5433/postgres")
+with temp_engine.connect() as conn:
+    conn.execute(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}")
+    conn.execute(f"CREATE DATABASE {TEST_DB_NAME}")
+    conn.commit()
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import Base from models to ensure all models are registered
@@ -80,3 +87,18 @@ def test_history():
     assert results[0]["result"] == 1
     assert results[1]["input_number"] == 5
     assert results[1]["result"] == 120
+
+def teardown_module(module):
+    """Cleanup test database after all tests complete"""
+    engine.dispose()
+    with temp_engine.connect() as conn:
+        # Terminate all connections to the test database
+        conn.execute(f"""
+            SELECT pg_terminate_backend(pg_stat_activity.pid)
+            FROM pg_stat_activity
+            WHERE pg_stat_activity.datname = '{TEST_DB_NAME}'
+            AND pid <> pg_backend_pid()
+        """)
+        conn.execute(f"DROP DATABASE IF EXISTS {TEST_DB_NAME}")
+        conn.commit()
+    temp_engine.dispose()
