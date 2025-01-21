@@ -1,3 +1,5 @@
+# use these if running "$pytest tests/"
+# don't need them if running "$PYTHONPATH=. pytest tests/"
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
