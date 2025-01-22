@@ -18,7 +18,7 @@ f9aacf5 feat: Add min/max filters to history endpoint and associated tests
 ```
 
 # Sonnet Diff
-```
+```diff
 diff --git a/src/api.py b/src/api.py
 index 05ef345..fe9f168 100644
 --- a/src/api.py
@@ -88,7 +88,7 @@ index 2cafcd4..e1b7b38 100644
 
 # GPT Diff
 
-```
+```diff
 diff --git a/src/api.py b/src/api.py
 index 05ef345..342773e 100644
 --- a/src/api.py
