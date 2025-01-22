@@ -97,7 +97,6 @@ def test_history_filter():
     db = TestingSessionLocal()
     db.query(FactorialResult).delete()
     db.commit()
-    
     # Create some factorial results
     client.get("/factorial/0")
     client.get("/factorial/5")
@@ -113,6 +112,35 @@ def test_history_filter():
     # Check the result is correct
     assert results[0]["input_number"] == 5
     assert results[0]["result"] == 120
+
+def test_history_with_filters():
+    # Clear any existing history
+    db = TestingSessionLocal()
+    db.query(FactorialResult).delete()
+    db.commit()
+    # Create several factorial results
+    test_inputs = [0, 3, 5, 7]
+    for n in test_inputs:
+        client.get(f"/factorial/{n}")
+    
+    # Test history with min_input filter
+    response = client.get("/history?min_input=3")
+    results = response.json()
+    assert len(results) == 3
+    assert all(r["input_number"] >= 3 for r in results)
+    
+    # Test history with max_input filter
+    response = client.get("/history?max_input=5")
+    results = response.json()
+    assert len(results) == 3
+    assert all(r["input_number"] <= 5 for r in results)
+    
+    # Test history with both filters
+    response = client.get("/history?min_input=3&max_input=5")
+    results = response.json()
+    assert len(results) == 2
+    assert all(3 <= r["input_number"] <= 5 for r in results)
+
 
 def teardown_module(module):
     """Cleanup test database after all tests complete"""
