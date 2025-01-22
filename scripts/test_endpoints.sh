@@ -94,3 +94,10 @@ curl -s http://localhost:8080/factorial/-1 | jq
 # Sample output: {
 #   "detail": "Input must be non-negative"
 # }
+
+# Test recursion limit error
+echo -e "\nTesting very large input..."
+curl -s http://localhost:8080/factorial/1000 | jq
+# Sample output: {
+#   "detail": "Input too large"
+# }
