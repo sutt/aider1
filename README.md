@@ -2,6 +2,25 @@
 
 A FastAPI service that calculates factorials and stores results in PostgreSQL.
 
+## API Endpoints
+
+### Calculate Factorial
+- `GET /factorial/{input_num}`: Calculate factorial for a non-negative integer
+- Returns: `{"result": calculated_factorial}`
+
+### History
+- `GET /history`: Retrieve calculation history with optional filters
+- Filters:
+  - `input_number`: Exact match for a specific input number
+  - `min_input`: Show results with input number greater than or equal to this value
+  - `max_input`: Show results with input number less than or equal to this value
+- Examples:
+  - `/history` - Get all results
+  - `/history?input_number=5` - Get results for input 5
+  - `/history?min_input=3` - Get results for inputs ≥ 3
+  - `/history?max_input=5` - Get results for inputs ≤ 5
+  - `/history?min_input=3&max_input=5` - Get results for inputs between 3 and 5 inclusive
+
 ## Testing
 
 ### Prerequisites
