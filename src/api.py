@@ -29,6 +29,21 @@ async def get_factorial_result(input_num: int, db: Session = Depends(database.ge
         raise HTTPException(status_code=400, detail="Input too large")
 
 @app.get("/history")
-async def get_history(db: Session = Depends(database.get_db)):
-    results = db.query(models.FactorialResult).order_by(models.FactorialResult.created_at.desc()).all()
+async def get_history(
+    db: Session = Depends(database.get_db),
+    input_number: int = None,
+    min_input: int | None = None,
+    max_input: int | None = None
+):
+    query = db.query(models.FactorialResult)
+
+    if input_number is not None:
+        query = query.filter(models.FactorialResult.input_number == input_number)
+    
+    if min_input is not None:
+        query = query.filter(models.FactorialResult.input_number >= min_input)
+    if max_input is not None:
+        query = query.filter(models.FactorialResult.input_number <= max_input)
+    
+    results = query.order_by(models.FactorialResult.created_at.desc()).all()
     return results

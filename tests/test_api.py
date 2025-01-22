@@ -92,6 +92,56 @@ def test_history():
     assert results[1]["input_number"] == 0
     assert results[1]["result"] == 1
 
+def test_history_filter():
+    # Clear any existing history
+    db = TestingSessionLocal()
+    db.query(FactorialResult).delete()
+    db.commit()
+    # Create some factorial results
+    client.get("/factorial/0")
+    client.get("/factorial/5")
+    
+    # Test history endpoint with filter
+    response = client.get("/history?input_number=5")
+    assert response.status_code == 200
+    results = response.json()
+    
+    # Check we have 1 result
+    assert len(results) == 1
+    
+    # Check the result is correct
+    assert results[0]["input_number"] == 5
+    assert results[0]["result"] == 120
+
+def test_history_with_filters():
+    # Clear any existing history
+    db = TestingSessionLocal()
+    db.query(FactorialResult).delete()
+    db.commit()
+    # Create several factorial results
+    test_inputs = [0, 3, 5, 7]
+    for n in test_inputs:
+        client.get(f"/factorial/{n}")
+    
+    # Test history with min_input filter
+    response = client.get("/history?min_input=3")
+    results = response.json()
+    assert len(results) == 3
+    assert all(r["input_number"] >= 3 for r in results)
+    
+    # Test history with max_input filter
+    response = client.get("/history?max_input=5")
+    results = response.json()
+    assert len(results) == 3
+    assert all(r["input_number"] <= 5 for r in results)
+    
+    # Test history with both filters
+    response = client.get("/history?min_input=3&max_input=5")
+    results = response.json()
+    assert len(results) == 2
+    assert all(3 <= r["input_number"] <= 5 for r in results)
+
+
 def teardown_module(module):
     """Cleanup test database after all tests complete"""
     engine.dispose()
@@ -99,6 +149,8 @@ def teardown_module(module):
     # Check if any test failed
     if hasattr(module, 'pytest_failed') and module.pytest_failed:
         print(f"\nTest failed - preserving database '{TEST_DB_NAME}' for inspection")
+        print(f"To connect to the database using Docker, use the following command:")
+        print(f"docker exec -it <container_name> psql -U postgres -d {TEST_DB_NAME} -h localhost -p 5433")
         return
         
     with temp_engine.connect() as conn:
