@@ -1,0 +1,64 @@
+diff --git a/src/api.py b/src/api.py
+index 05ef345..fe9f168 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -29,6 +29,17 @@ async def get_factorial_result(input_num: int, db: Session = Depends(database.ge
+         raise HTTPException(status_code=400, detail="Input too large")
+ 
+ @app.get("/history")
+-async def get_history(db: Session = Depends(database.get_db)):
+-    results = db.query(models.FactorialResult).order_by(models.FactorialResult.created_at.desc()).all()
++async def get_history(
++    db: Session = Depends(database.get_db),
++    min_input: int | None = None,
++    max_input: int | None = None
++):
++    query = db.query(models.FactorialResult)
++    
++    if min_input is not None:
++        query = query.filter(models.FactorialResult.input_number >= min_input)
++    if max_input is not None:
++        query = query.filter(models.FactorialResult.input_number <= max_input)
++    
++    results = query.order_by(models.FactorialResult.created_at.desc()).all()
+     return results
+diff --git a/tests/test_api.py b/tests/test_api.py
+index 2cafcd4..e1b7b38 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -92,6 +92,35 @@ def test_history():
+     assert results[1]["input_number"] == 0
+     assert results[1]["result"] == 1
+ 
++def test_history_with_filters():
++    # Clear any existing history
++    db = TestingSessionLocal()
++    db.query(FactorialResult).delete()
++    db.commit()
++    
++    # Create several factorial results
++    test_inputs = [0, 3, 5, 7]
++    for n in test_inputs:
++        client.get(f"/factorial/{n}")
++    
++    # Test history with min_input filter
++    response = client.get("/history?min_input=3")
++    results = response.json()
++    assert len(results) == 3
++    assert all(r["input_number"] >= 3 for r in results)
++    
++    # Test history with max_input filter
++    response = client.get("/history?max_input=5")
++    results = response.json()
++    assert len(results) == 3
++    assert all(r["input_number"] <= 5 for r in results)
++    
++    # Test history with both filters
++    response = client.get("/history?min_input=3&max_input=5")
++    results = response.json()
++    assert len(results) == 2
++    assert all(3 <= r["input_number"] <= 5 for r in results)
++
+ def teardown_module(module):
+     """Cleanup test database after all tests complete"""
+     engine.dispose()

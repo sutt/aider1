@@ -1,0 +1,4 @@
+0756d41 Ah! the git merge broke this one or gpt-4 messed up
+dc62f8f fix: Remove invalid assertion for nonexistent history result
+75fe637 feat: Add filter to history endpoint and associated test for behavior
+27bf779 feat: Add Docker connection command printout for preserved test database
